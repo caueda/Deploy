@@ -3,15 +3,17 @@ package br.gov.mt.mti.deploy;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+
+import edu.nyu.cs.javagit.api.DotGit;
 
 public class ApplicationDeploy extends JFrame {
 	
@@ -40,7 +42,8 @@ public class ApplicationDeploy extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent event) {
-				
+				File repositoryDirectory = new File(textAreaRepoLocation.getText());
+				DotGit dotGit = DotGit.getInstance(repositoryDirectory);
 			}
         	
         });
