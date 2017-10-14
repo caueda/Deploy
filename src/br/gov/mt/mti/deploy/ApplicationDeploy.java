@@ -2,7 +2,6 @@ package br.gov.mt.mti.deploy;
 
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.BoxLayout;
@@ -10,23 +9,31 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import edu.nyu.cs.javagit.api.DotGit;
+import edu.nyu.cs.javagit.api.JavaGitConfiguration;
+import edu.nyu.cs.javagit.api.JavaGitException;
+import edu.nyu.cs.javagit.api.Ref;
 
 public class ApplicationDeploy extends JFrame {
 	
 	/**
+	 * 
 	 * 
 	 */
 	private static final long serialVersionUID = -3086687418102161061L;
 	
 	JButton gerarButton = new JButton("Gerar");
 	JTextField tfNewBranchName = new JTextField();
-	JTextArea textAreaArtifacts = new JTextArea();
-	JTextArea textAreaRepoLocation = new JTextArea();
+	JTextArea artifacts = new JTextArea();
+	JScrollPane scrollArtifacts = new JScrollPane(artifacts);
+	JTextField textAreaRepoLocation = new JTextField();
+	JTextField lastCommit = new JTextField();
 	JTextArea output = new JTextArea();
+	JScrollPane scrollOutput = new JScrollPane(output);
 	
 	public ApplicationDeploy () {
 		initUI();
@@ -38,36 +45,42 @@ public class ApplicationDeploy extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         
-        gerarButton.addActionListener(new ActionListener(){
-
-			@Override
-			public void actionPerformed(ActionEvent event) {
-				File repositoryDirectory = new File(textAreaRepoLocation.getText());
-				DotGit dotGit = DotGit.getInstance(repositoryDirectory);
+        gerarButton.addActionListener((ActionEvent event) -> {
+            //System.exit(0);
+        	File repositoryDirectory = new File(textAreaRepoLocation.getText());
+        	DotGit doGit = DotGit.getInstance(repositoryDirectory);
+			
+			try {
+				output.setText("");
+				output.setText(JavaGitConfiguration.getGitVersion() + "\n");
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-        	
         });
         
         BoxLayout gl = new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS);
         getContentPane().setLayout(gl);
         
-        output.setEditable(false);
         output.setColumns(120);
         output.setRows(100);
+        output.setWrapStyleWord(true);
+        output.setLineWrap(true);
         
-        textAreaArtifacts.setColumns(120);
-        textAreaArtifacts.setRows(100);
+        artifacts.setColumns(120);
+        artifacts.setRows(100);
+        artifacts.setWrapStyleWord(true);
+        artifacts.setLineWrap(true);
+        
         addComponent(new JLabel("Local do Repositório"));
         addComponent(textAreaRepoLocation);
         addComponent(new JLabel("Branch Name"));
         addComponent(tfNewBranchName);
+        addComponent(new JLabel("Commit"));
+        addComponent(lastCommit);
         addComponent(new JLabel("Artefatos"));
-        addComponent(textAreaArtifacts);
-        addComponent(output);
-        
-        gerarButton.addActionListener((ActionEvent event) -> {
-            System.exit(0);
-        });
+        addComponent(scrollArtifacts);
+        addComponent(new JLabel("Console"));
+        addComponent(scrollOutput);
         
         addComponent(gerarButton);
 	}
