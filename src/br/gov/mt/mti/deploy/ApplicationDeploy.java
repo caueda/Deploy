@@ -3,6 +3,7 @@ package br.gov.mt.mti.deploy;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -13,10 +14,18 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import edu.nyu.cs.javagit.api.DotGit;
-import edu.nyu.cs.javagit.api.JavaGitConfiguration;
-import edu.nyu.cs.javagit.api.JavaGitException;
-import edu.nyu.cs.javagit.api.Ref;
+import org.eclipse.jgit.api.CheckoutCommand;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 public class ApplicationDeploy extends JFrame {
 	
@@ -47,13 +56,31 @@ public class ApplicationDeploy extends JFrame {
         
         gerarButton.addActionListener((ActionEvent event) -> {
             //System.exit(0);
-        	File repositoryDirectory = new File(textAreaRepoLocation.getText());
-        	DotGit doGit = DotGit.getInstance(repositoryDirectory);
-			
-			try {
-				output.setText("");
-				output.setText(JavaGitConfiguration.getGitVersion() + "\n");
-			} catch (Exception e) {
+        	
+        	try {
+				Repository repo = new FileRepositoryBuilder()
+					    .setGitDir(new File("c:/Java/workspace/Angular2/QuickStart/angular-grrecurso/.git"))
+					    .build();
+				Git git = new Git(repo);
+				ObjectId commitId = ObjectId.fromString("e46a4b067248fffe5a72e243e6f5073d43722518");
+				RevWalk revWalk = new RevWalk( repo );
+				RevCommit commit = revWalk.parseCommit( commitId );
+				CheckoutCommand checkout = git.checkout();
+				checkout.setName("Temporario");
+				checkout.setStartPoint(commit);
+				checkout.setCreateBranch(true);
+				checkout.call();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (RefAlreadyExistsException e) {
+				e.printStackTrace();
+			} catch (RefNotFoundException e) {
+				e.printStackTrace();
+			} catch (InvalidRefNameException e) {
+				e.printStackTrace();
+			} catch (CheckoutConflictException e) {
+				e.printStackTrace();
+			} catch (GitAPIException e) {
 				e.printStackTrace();
 			}
         });
