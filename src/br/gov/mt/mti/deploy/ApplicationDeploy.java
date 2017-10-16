@@ -10,6 +10,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -36,16 +37,25 @@ public class ApplicationDeploy extends JFrame {
 	private static final long serialVersionUID = -3086687418102161061L;
 	
 	JButton gerarButton = new JButton("Gerar");
-	JTextField tfNewBranchName = new JTextField();
-	JTextArea artifacts = new JTextArea();
-	JScrollPane scrollArtifacts = new JScrollPane(artifacts);
-	JTextField textAreaRepoLocation = new JTextField();
-	JTextField lastCommit = new JTextField();
+	JTextField tfBranchOrigem = new JTextField();
+	JTextField tfBranchDestino = new JTextField();
+	JTextArea taArtifacts = new JTextArea();
+	JScrollPane scrollArtifacts = new JScrollPane(taArtifacts);
+	JTextField tfRepoLocation = new JTextField();
+	JTextField tfCommit = new JTextField();
 	JTextArea output = new JTextArea();
 	JScrollPane scrollOutput = new JScrollPane(output);
 	
 	public ApplicationDeploy () {
 		initUI();
+	}
+	
+	private static boolean isStringEmpty(String value){
+		return (value == null || value.isEmpty());
+	}
+	
+	private static boolean isNotStringEmpty(String value){
+		return ! isStringEmpty(value);
 	}
 	
 	private void initUI(){
@@ -58,18 +68,64 @@ public class ApplicationDeploy extends JFrame {
             //System.exit(0);
         	
         	try {
-				Repository repo = new FileRepositoryBuilder()
-					    .setGitDir(new File("c:/Java/workspace/Angular2/QuickStart/angular-grrecurso/.git"))
-					    .build();
+				if(isStringEmpty(tfRepoLocation.getText())){
+					JOptionPane.showMessageDialog(this, "O Endereço do Repositório Local deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				Repository repo = null;
+				
+				try {
+					repo = new FileRepositoryBuilder()
+						    .setGitDir(new File(tfRepoLocation.getText()))
+						    .build();
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(this, "Não foi possível localizar o repositório local.","Erro",JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
 				Git git = new Git(repo);
-				ObjectId commitId = ObjectId.fromString("e46a4b067248fffe5a72e243e6f5073d43722518");
+				ObjectId commitId = ObjectId.fromString(tfCommit.getText());
+				if(isStringEmpty(tfCommit.getText())){
+					JOptionPane.showMessageDialog(this, "O Commit deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 				RevWalk revWalk = new RevWalk( repo );
 				RevCommit commit = revWalk.parseCommit( commitId );
 				CheckoutCommand checkout = git.checkout();
-				checkout.setName("Temporario");
+				
+				checkout.setName(tfBranchOrigem.getText());
+				
+				if(isStringEmpty(tfBranchOrigem.getText())){
+					JOptionPane.showMessageDialog(this, "O Nome do Branch de Origem deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				
+				if(isStringEmpty(tfBranchDestino.getText())){
+					JOptionPane.showMessageDialog(this, "O Nome do Branch de Origem deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				
+				if(isStringEmpty(taArtifacts.getText())){
+					JOptionPane.showMessageDialog(this, "Os artefato(s) deve(m) ser informado(s).","Aviso",JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				String[] artefatos = taArtifacts.getText().split("/n");
+				
 				checkout.setStartPoint(commit);
 				checkout.setCreateBranch(true);
 				checkout.call();
+				
+				
+				CheckoutCommand checkoutBranchDestino = git.checkout();
+				checkoutBranchDestino.setName(tfBranchDestino.getText());
+				checkoutBranchDestino.call();
+				
+				checkoutBranchDestino.setName(tfBranchOrigem.getText());
+				for(String artefato : artefatos){
+					checkoutBranchDestino.addPath(artefato);
+				}
+				checkoutBranchDestino.call();
+				
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (RefAlreadyExistsException e) {
@@ -93,17 +149,19 @@ public class ApplicationDeploy extends JFrame {
         output.setWrapStyleWord(true);
         output.setLineWrap(true);
         
-        artifacts.setColumns(120);
-        artifacts.setRows(100);
-        artifacts.setWrapStyleWord(true);
-        artifacts.setLineWrap(true);
+        taArtifacts.setColumns(120);
+        taArtifacts.setRows(100);
+        taArtifacts.setWrapStyleWord(true);
+        taArtifacts.setLineWrap(true);
         
         addComponent(new JLabel("Local do Repositório"));
-        addComponent(textAreaRepoLocation);
-        addComponent(new JLabel("Branch Name"));
-        addComponent(tfNewBranchName);
+        addComponent(tfRepoLocation);
+        addComponent(new JLabel("Branch Origem"));
+        addComponent(tfBranchOrigem);
+        addComponent(new JLabel("Branch Destino"));
+        addComponent(tfBranchDestino);
         addComponent(new JLabel("Commit"));
-        addComponent(lastCommit);
+        addComponent(tfCommit);
         addComponent(new JLabel("Artefatos"));
         addComponent(scrollArtifacts);
         addComponent(new JLabel("Console"));
