@@ -4,10 +4,14 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -18,7 +22,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -32,15 +38,19 @@ public class ApplicationDeploy extends JFrame {
 	 */
 	private static final long serialVersionUID = -3086687418102161061L;
 	
+	private static final String KEY_EXCLUDE = "exclude";
+	private static final String KEY_REPO_LOCATION = "repo.location";
+	
 	JButton gerarButton = new JButton("Gerar");
 	JButton repoButton = new JButton("Repositório");
-	JTextField tfBranchDestino = new JTextField();
+	JComboBox<String> jcBranchDestino = new JComboBox<String>();
 	JTextArea taArtifacts = new JTextArea();
 	JScrollPane scrollArtifacts = new JScrollPane(taArtifacts);
 	JTextField tfRepoLocation = new JTextField();
 	JTextField tfCommit = new JTextField();
 	JFileChooser fileChooser = new JFileChooser();
 	FileInputStream fis = null;
+	Repository repo = null;
 	
 	public ApplicationDeploy () throws Exception {
 		initUI();
@@ -54,7 +64,20 @@ public class ApplicationDeploy extends JFrame {
 		return ! isStringEmpty(value);
 	}
 	
+	protected List<String> listBranchs(Repository repository) throws GitAPIException{
+		List<Ref> call = new Git(repository).branchList().call();
+		List<String> lista = new ArrayList<String>();
+		for (Ref ref : call) {
+			String branchName = null;
+			int lastIndexOf = ref.getName().lastIndexOf("/");
+			branchName = ref.getName().substring(lastIndexOf + 1);
+		    lista.add(branchName);
+		}
+		return lista;
+	}
+	
 	private void initUI() throws Exception {
+		
 		String path = System.getProperty("user.dir");
 		
 		Properties prop = new Properties();
@@ -71,19 +94,24 @@ public class ApplicationDeploy extends JFrame {
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setMultiSelectionEnabled(false);
         
+        if(prop.get(KEY_REPO_LOCATION) != null && !prop.get(KEY_REPO_LOCATION).toString().isEmpty()){
+			tfRepoLocation.setText(prop.get(KEY_REPO_LOCATION).toString());
+			initRepository();
+		} 
+        
         repoButton.addActionListener((ActionEvent event) -> {
         	int returnVal = fileChooser.showOpenDialog(this);
         	if (returnVal == JFileChooser.APPROVE_OPTION) {
                 tfRepoLocation.setText(fileChooser.getSelectedFile().getAbsolutePath() + 
                 		File.separator + ".git");
                 //This is where a real application would open the file.
+                initRepository();
             } 
         });
         
         gerarButton.addActionListener((ActionEvent event) -> {
             //System.exit(0);
         	
-        	Repository repo = null;
         	try {
 				if(isStringEmpty(tfRepoLocation.getText())){
 					JOptionPane.showMessageDialog(this, "O Endereço do Repositório Local deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
@@ -94,6 +122,8 @@ public class ApplicationDeploy extends JFrame {
 					repo = new FileRepositoryBuilder()
 						    .setGitDir(new File(tfRepoLocation.getText()))
 						    .build();
+					listBranchs(repo);
+					
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(this, "Não foi possível localizar o repositório local.","Erro",JOptionPane.ERROR_MESSAGE);
 					return;
@@ -108,8 +138,8 @@ public class ApplicationDeploy extends JFrame {
 				RevWalk revWalk = new RevWalk( repo );
 				RevCommit commit = revWalk.parseCommit( commitId );
 				
-				if(isStringEmpty(tfBranchDestino.getText())){
-					JOptionPane.showMessageDialog(this, "O Nome do Branch de Origem deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
+				if(jcBranchDestino.getSelectedItem() == null){
+					JOptionPane.showMessageDialog(this, "O Nome do Branch de Destino deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
 					return;
 				}
 				
@@ -119,9 +149,9 @@ public class ApplicationDeploy extends JFrame {
 				}
 				String[] artefatos = taArtifacts.getText().split("\\n");
 				
-				git.checkout().setName(tfBranchDestino.getText()).call();
+				git.checkout().setName(jcBranchDestino.getSelectedItem().toString()).call();
 				
-				String[] excluidos = (prop.getProperty("exclude") != null) ? (prop.getProperty("exclude").split(",")) : new String[0];
+				String[] excluidos = (prop.getProperty(KEY_EXCLUDE) != null) ? (prop.getProperty(KEY_EXCLUDE).split(",")) : new String[0];
 				
 				for(String artefato : artefatos){	
 					if(artefato != null && !artefato.isEmpty()){
@@ -161,12 +191,26 @@ public class ApplicationDeploy extends JFrame {
         tfRepoLocation.setEditable(false);
         addComponent(tfRepoLocation);
         addComponent(new JLabel("Branch Destino"));
-        addComponent(tfBranchDestino);
+        addComponent(jcBranchDestino);
         addComponent(new JLabel("Commit"));
         addComponent(tfCommit);
         addComponent(new JLabel("Artefatos"));
         addComponent(scrollArtifacts);
         addComponent(gerarButton);
+	}
+
+	private void initRepository() {
+		try {
+			repo = new FileRepositoryBuilder()
+				    .setGitDir(new File(tfRepoLocation.getText()))
+				    .build();
+			listBranchs(repo);
+			DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>( listBranchs(repo).toArray(new String[]{}) );
+			jcBranchDestino.setModel(model);	
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this, "Não foi possível localizar o repositório local.","Erro",JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 	}
 	
 	private boolean contains(String[] excluidos, String artefato){
