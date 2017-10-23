@@ -94,9 +94,17 @@ public class ApplicationDeploy extends JFrame {
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setMultiSelectionEnabled(false);
         
-        if(prop.get(KEY_REPO_LOCATION) != null && !prop.get(KEY_REPO_LOCATION).toString().isEmpty()){
-			tfRepoLocation.setText(prop.get(KEY_REPO_LOCATION).toString());
-			initRepository();
+        if(prop.get(KEY_REPO_LOCATION) != null && !prop.get(KEY_REPO_LOCATION).toString().isEmpty()){        	
+        	String repoLocation = prop.get(KEY_REPO_LOCATION).toString();
+        	if(repoLocation.contains("/.git")) {
+        		File repoFolder = new File(repoLocation.replace("/.git",""));
+        		if(!repoFolder.exists()) {
+        			JOptionPane.showMessageDialog(this, "O repositório indicado no arquivo de properties não existe.", "Erro", JOptionPane.ERROR_MESSAGE);
+        		} else {
+        			tfRepoLocation.setText(repoLocation);
+        			initRepository();		
+        		}
+        	}			
 		} 
         
         repoButton.addActionListener((ActionEvent event) -> {
