@@ -3,6 +3,8 @@ package br.gov.mt.mti.deploy;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -38,8 +40,9 @@ public class ApplicationDeploy extends JFrame {
 	JTextField tfRepoLocation = new JTextField();
 	JTextField tfCommit = new JTextField();
 	JFileChooser fileChooser = new JFileChooser();
+	FileInputStream fis = null;
 	
-	public ApplicationDeploy () {
+	public ApplicationDeploy () throws Exception {
 		initUI();
 	}
 	
@@ -51,7 +54,15 @@ public class ApplicationDeploy extends JFrame {
 		return ! isStringEmpty(value);
 	}
 	
-	private void initUI(){
+	private void initUI() throws Exception {
+		String path = System.getProperty("user.dir");
+		
+		Properties prop = new Properties();
+		
+		fis = new FileInputStream(path + File.separator + "predeploy.properties");
+		
+		prop.load(fis);
+		
 		setTitle("MTI - Preparar Homologa");
         setSize(800, 600);
         setLocationRelativeTo(null);
@@ -110,10 +121,16 @@ public class ApplicationDeploy extends JFrame {
 				
 				git.checkout().setName(tfBranchDestino.getText()).call();
 				
-				for(String artefato : artefatos){		
-					git.checkout()
-					   .setStartPoint(commit)
-					   .addPath(artefato).call();
+				String[] excluidos = (prop.getProperty("exclude") != null) ? (prop.getProperty("exclude").split(",")) : new String[0];
+				
+				for(String artefato : artefatos){	
+					if(artefato != null && !artefato.isEmpty()){
+						if(!contains(excluidos, artefato)){
+							git.checkout()
+							   .setStartPoint(commit)
+							   .addPath(artefato).call();
+						}
+					}
 				}
 				
 				JOptionPane.showMessageDialog(this, "Operação executada com sucesso", "Artefatos preparados", JOptionPane.INFORMATION_MESSAGE);
@@ -125,6 +142,9 @@ public class ApplicationDeploy extends JFrame {
 					if(repo != null){
 						repo.close();
 					}
+				} catch(Exception e){}
+				try {
+					if(fis != null) fis.close();
 				} catch(Exception e){}
 			}
         });
@@ -149,14 +169,30 @@ public class ApplicationDeploy extends JFrame {
         addComponent(gerarButton);
 	}
 	
+	private boolean contains(String[] excluidos, String artefato){
+		if(excluidos == null | excluidos.length == 0) return false;
+		if(artefato == null || artefato.isEmpty()) return false;
+		for(String excluir : excluidos){
+			if(artefato.contains(excluir)) 
+				return true;
+		}
+		return false;
+	}
+	
 	protected void addComponent(JComponent comp){
 		getContentPane().add(comp);
 	}
 	
 	public static void main(String[] args){
 		EventQueue.invokeLater(() -> {
-			ApplicationDeploy ex = new ApplicationDeploy();
-            ex.setVisible(true);
+			ApplicationDeploy ex;
+			try {
+				ex = new ApplicationDeploy();
+				ex.setVisible(true);
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "Erro ao inicializar aplicação: " + e.getMessage() + "\nVerifique se o arquivo predeploy.properties está presente nas pasta contendo o arquivo *.jar", "Erro", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+			}
         });
 	}
 }
