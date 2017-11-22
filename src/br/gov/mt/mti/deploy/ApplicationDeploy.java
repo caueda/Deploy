@@ -23,6 +23,7 @@ import javax.swing.JTextField;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -86,7 +87,7 @@ public class ApplicationDeploy extends JFrame {
 		
 		prop.load(fis);
 		
-		setTitle("MTI - Preparar Homologa");
+		setTitle("MTI - Preparar Homologa - 1.1");
         setSize(800, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -162,8 +163,19 @@ public class ApplicationDeploy extends JFrame {
 				String[] excluidos = (prop.getProperty(KEY_EXCLUDE) != null) ? (prop.getProperty(KEY_EXCLUDE).split(",")) : new String[0];
 				
 				for(String artefato : artefatos){	
-					if(artefato != null && !artefato.isEmpty()){
-						if(!contains(excluidos, artefato)){
+					if(artefato != null && !artefato.trim().isEmpty()){
+						if(!contains(excluidos, artefato)){		
+							BlameResult result = git.blame().setStartCommit(commit).setFilePath(artefato).call();
+							if(result == null) {
+								int opcao = 
+										JOptionPane.showConfirmDialog(this, "O arquivo " + artefato + " não existe na origem. Deseja removê-lo do branch de destino ?", "Confirmar exclusão ?", JOptionPane.CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+								if(opcao == JOptionPane.OK_OPTION) {
+									File fileArtefatoRemover = new File(repo.getDirectory().getParent(), artefato);
+									if(fileArtefatoRemover.exists()) {
+										fileArtefatoRemover.delete();
+									}
+								}								
+							}
 							git.checkout()
 							   .setStartPoint(commit)
 							   .addPath(artefato).call();
