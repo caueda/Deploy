@@ -87,7 +87,7 @@ public class ApplicationDeploy extends JFrame {
 		
 		prop.load(fis);
 		
-		setTitle("MTI - Preparar Homologa");
+		setTitle("MTI - Preparar Homologa - 1.1");
         setSize(800, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
