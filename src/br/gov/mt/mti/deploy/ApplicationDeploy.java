@@ -1,7 +1,10 @@
 package br.gov.mt.mti.deploy;
 
+import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -13,13 +16,18 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -42,14 +50,13 @@ public class ApplicationDeploy extends JFrame {
 	private static final String KEY_EXCLUDE = "exclude";
 	private static final String KEY_REPO_LOCATION = "repo.location";
 	
+	JMenuBar menuBar = new JMenuBar();
 	JButton gerarButton = new JButton("Gerar");
-	JButton repoButton = new JButton("Repositório");
 	JComboBox<String> jcBranchDestino = new JComboBox<String>();
 	JTextArea taArtifacts = new JTextArea();
 	JScrollPane scrollArtifacts = new JScrollPane(taArtifacts);
 	JTextField tfRepoLocation = new JTextField();
-	JTextField tfCommit = new JTextField();
-	JFileChooser fileChooser = new JFileChooser();
+	JTextField tfCommit = new JTextField();	
 	FileInputStream fis = null;
 	Repository repo = null;
 	
@@ -87,13 +94,12 @@ public class ApplicationDeploy extends JFrame {
 		
 		prop.load(fis);
 		
-		setTitle("MTI - Preparar Homologa - 1.1");
+		setTitle("MTI - Pre Deploy");
         setSize(800, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setMultiSelectionEnabled(false);
+        setJMenuBar(menuBar);        
+        setLocationRelativeTo(null);
         
         if(prop.get(KEY_REPO_LOCATION) != null && !prop.get(KEY_REPO_LOCATION).toString().isEmpty()){        	
         	String repoLocation = prop.get(KEY_REPO_LOCATION).toString();
@@ -108,19 +114,7 @@ public class ApplicationDeploy extends JFrame {
         	}			
 		} 
         
-        repoButton.addActionListener((ActionEvent event) -> {
-        	int returnVal = fileChooser.showOpenDialog(this);
-        	if (returnVal == JFileChooser.APPROVE_OPTION) {
-                tfRepoLocation.setText(fileChooser.getSelectedFile().getAbsolutePath() + 
-                		File.separator + ".git");
-                //This is where a real application would open the file.
-                initRepository();
-            } 
-        });
-        
         gerarButton.addActionListener((ActionEvent event) -> {
-            //System.exit(0);
-        	
         	try {
 				if(isStringEmpty(tfRepoLocation.getText())){
 					JOptionPane.showMessageDialog(this, "O Endereço do Repositório Local deve ser informado.","Aviso",JOptionPane.WARNING_MESSAGE);
@@ -202,12 +196,86 @@ public class ApplicationDeploy extends JFrame {
         BoxLayout gl = new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS);
         getContentPane().setLayout(gl);
         
+        JMenuItem menuItemRepo = new JMenuItem("Repositório");
+        menuItemRepo.setBorder(new javax.swing.border.EtchedBorder());
+        menuItemRepo.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Runnable runnable = new Runnable() {
+
+					@Override
+					public void run() {
+						JFileChooser fileChooser = new JFileChooser();
+				        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				        fileChooser.setMultiSelectionEnabled(false);
+				        
+				        int returnVal = fileChooser.showDialog(getOwner(), "Abrir");
+			        	if (returnVal == JFileChooser.APPROVE_OPTION) {
+			        		File dotGit = new File(fileChooser.getSelectedFile(),".git");
+			        		if(!dotGit.exists()) {
+			        			JOptionPane.showMessageDialog(getOwner(), "A pasta informada não é um repositório do GIT.", "Erro", JOptionPane.ERROR_MESSAGE);
+			        		} else {
+				                tfRepoLocation.setText(fileChooser.getSelectedFile().getAbsolutePath() + 
+				                		File.separator + ".git");
+				                initRepository();
+			        		}
+			            } 
+					}
+				};
+				SwingUtilities.invokeLater(runnable);
+			}});
+        
+        JMenuItem menuItem = new JMenuItem("Sobre");     
+        menuItem.setBorder(new javax.swing.border.EtchedBorder());
+        menuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Runnable runnable = new Runnable() {
+
+					@Override
+					public void run() {
+						JDialog dialogSobre = new JDialog(getOwner(),"Sobre");
+						dialogSobre.setSize(300, 250);
+						dialogSobre.setLocationRelativeTo(getOwner());
+						dialogSobre.setModal(true);
+						dialogSobre.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+						JTextPane textPaneSobre = new JTextPane();
+						textPaneSobre.setBorder(new javax.swing.border.EtchedBorder());
+						textPaneSobre.setContentType("text/html");
+						textPaneSobre.setEditable(false);
+						textPaneSobre.setText("<html>"
+								+ "<head>"	
+								+ "</head>"
+								+ "<h1 style='text-align:center'>Pré Deploy</h1>"
+								+ "<p>Este programa realiza o checkout de artefatos específicos <br>de um commit para um branch.</p>"
+								+ "<p><b>Informações</b></p>"
+								+ "<ul>"
+								+ "<li><b>Data da release:</b> 23/11/2017</li>"
+								+ "<li><b>versão:</b> v1.0.1.</li>"
+								+ "</ul>"
+								+ "</html>");
+						dialogSobre.setLayout(new BorderLayout());
+						dialogSobre.add(textPaneSobre);
+						dialogSobre.setVisible(true);
+					}
+				};
+				SwingUtilities.invokeLater(runnable);
+		}});
+        
+        
+        
+        menuBar.add(menuItemRepo);
+        menuBar.add(menuItem);
+        menuBar.setLayout(new FlowLayout());
+        
         taArtifacts.setColumns(120);
         taArtifacts.setRows(100);
         taArtifacts.setWrapStyleWord(true);
         taArtifacts.setLineWrap(true);
         
-        addComponent(repoButton);
+//        addComponent(repoButton);
         tfRepoLocation.setEditable(false);
         addComponent(tfRepoLocation);
         addComponent(new JLabel("Branch Destino"));
@@ -248,10 +316,9 @@ public class ApplicationDeploy extends JFrame {
 	}
 	
 	public static void main(String[] args){
-		EventQueue.invokeLater(() -> {
-			ApplicationDeploy ex;
+		EventQueue.invokeLater(() -> {			
 			try {
-				ex = new ApplicationDeploy();
+				ApplicationDeploy ex = new ApplicationDeploy();
 				ex.setVisible(true);
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(null, "Erro ao inicializar aplicação: " + e.getMessage() + "\nVerifique se o arquivo predeploy.properties está presente nas pasta contendo o arquivo *.jar", "Erro", JOptionPane.ERROR_MESSAGE);

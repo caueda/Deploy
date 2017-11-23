@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.mt.gov.mti.git.process</groupId>
 	<artifactId>br.mt.gov.mti.git.process</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>GitProcess</name>
 	<description>Tool for process using git</description>
 	<dependencies>
