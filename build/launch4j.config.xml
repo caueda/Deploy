@@ -2,7 +2,7 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>D:\Java\workspace\Deploy\build\br.mt.gov.mti.git.process-1.0.1-SNAPSHOT.jar</jar>
+  <jar>D:\Java\workspace\Deploy\build\br.mt.gov.mti.git.process-1.0.1-SNAPSHOT-jar-with-dependencies.jar</jar>
   <outfile>d:\Java\workspace\Deploy\build\PreDeploy.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
@@ -23,4 +23,10 @@
     <jdkPreference>preferJre</jdkPreference>
     <runtimeBits>64/32</runtimeBits>
   </jre>
+  <splash>
+    <file>D:\Java\workspace\Deploy\build\splash.bmp</file>
+    <waitForWindow>true</waitForWindow>
+    <timeout>60</timeout>
+    <timeoutErr>true</timeoutErr>
+  </splash>
 </launch4jConfig>

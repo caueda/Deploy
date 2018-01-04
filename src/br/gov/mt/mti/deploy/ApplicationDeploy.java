@@ -158,6 +158,7 @@ public class ApplicationDeploy extends JFrame {
 				
 				for(String artefato : artefatos){	
 					if(artefato != null && !artefato.trim().isEmpty()){
+						artefato = artefato.trim();
 						if(!contains(excluidos, artefato)){		
 							BlameResult result = git.blame().setStartCommit(commit).setFilePath(artefato).call();
 							if(result == null) {
@@ -175,6 +176,7 @@ public class ApplicationDeploy extends JFrame {
 							   .addPath(artefato).call();
 						}
 					}
+					
 				}
 				
 				JOptionPane.showMessageDialog(this, "Operação executada com sucesso", "Artefatos preparados", JOptionPane.INFORMATION_MESSAGE);
@@ -252,7 +254,7 @@ public class ApplicationDeploy extends JFrame {
 								+ "<p>Este programa realiza o checkout de artefatos específicos <br>de um commit para um branch.</p>"
 								+ "<p><b>Informações</b></p>"
 								+ "<ul>"
-								+ "<li><b>Data da release:</b> 23/11/2017</li>"
+								+ "<li><b>Data da release:</b> 04/01/2018</li>"
 								+ "<li><b>versão:</b> v1.0.1.</li>"
 								+ "</ul>"
 								+ "</html>");
@@ -305,7 +307,7 @@ public class ApplicationDeploy extends JFrame {
 		if(excluidos == null | excluidos.length == 0) return false;
 		if(artefato == null || artefato.isEmpty()) return false;
 		for(String excluir : excluidos){
-			if(artefato.contains(excluir)) 
+			if(artefato.contains(excluir.trim())) 
 				return true;
 		}
 		return false;
